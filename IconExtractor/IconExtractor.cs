@@ -37,8 +37,7 @@ namespace TsudaKageyu
 {
     public class IconExtractor
     {
-        ////////////////////////////////////////////////////////////////////////
-        // Constants
+        #region Constants
 
         // Flags for LoadLibraryEx().
 
@@ -46,44 +45,38 @@ namespace TsudaKageyu
 
         // Resource types for EnumResourceNames().
 
-        private readonly static IntPtr RT_ICON = (IntPtr)3;
-        private readonly static IntPtr RT_GROUP_ICON = (IntPtr)14;
+        private static readonly IntPtr RT_ICON = (IntPtr)3;
+        private static readonly IntPtr RT_GROUP_ICON = (IntPtr)14;
 
         private const int MAX_PATH = 260;
 
-        ////////////////////////////////////////////////////////////////////////
-        // Fields
+        #endregion
+
+        #region Fields
 
         private byte[][] iconData = null;   // Binary data of each icon.
 
-        ////////////////////////////////////////////////////////////////////////
-        // Public properties
+        #endregion
+
+        #region Public properties
 
         /// <summary>
         /// Gets the full path of the associated file.
         /// </summary>
-        public string FileName
-        {
-            get;
-            private set;
-        }
+        public string FileName { get; private set; }
 
         /// <summary>
         /// Gets the count of the icons in the associated file.
         /// </summary>
-        public int Count
-        {
-            get { return iconData.Length; }
-        }
+        public int Count => iconData.Length;
+
+        #endregion
 
         /// <summary>
         /// Initializes a new instance of the IconExtractor class from the specified file name.
         /// </summary>
         /// <param name="fileName">The file to extract icons from.</param>
-        public IconExtractor(string fileName)
-        {
-            Initialize(fileName);
-        }
+        public IconExtractor(string fileName) => Initialize(fileName);
 
         /// <summary>
         /// Extracts an icon from the file.
@@ -94,14 +87,13 @@ namespace TsudaKageyu
         public Icon GetIcon(int index)
         {
             if (index < 0 || Count <= index)
-                throw new ArgumentOutOfRangeException("index");
+                throw new ArgumentOutOfRangeException(nameof(index));
 
-            // Create an Icon from the .ico file in memory.
+            // Create an Icon based on a .ico file in memory.
 
-            using (var ms = new MemoryStream(iconData[index]))
-            {
+            using (MemoryStream ms = new MemoryStream(iconData[index]))
+
                 return new Icon(ms);
-            }
         }
 
         /// <summary>
@@ -111,7 +103,7 @@ namespace TsudaKageyu
         /// <remarks>Always returns new copies of the Icons. They should be disposed by the user.</remarks>
         public Icon[] GetAllIcons()
         {
-            var icons = new List<Icon>();
+            List<Icon> icons = new List<Icon>();
             for (int i = 0; i < Count; ++i)
                 icons.Add(GetIcon(i));
 
@@ -138,7 +130,7 @@ namespace TsudaKageyu
         private void Initialize(string fileName)
         {
             if (fileName == null)
-                throw new ArgumentNullException("fileName");
+                throw new ArgumentNullException(nameof(fileName));
 
             IntPtr hModule = IntPtr.Zero;
             try
@@ -151,16 +143,16 @@ namespace TsudaKageyu
 
                 // Enumerate the icon resource and build .ico files in memory.
 
-                var tmpData = new List<byte[]>();
+                List<byte[]> tmpData = new List<byte[]>();
 
-                ENUMRESNAMEPROC callback = (h, t, name, l) =>
+                bool callback(IntPtr h, IntPtr t, IntPtr name, IntPtr l)
                 {
-                    // Refer to the following URL for the data structures used here:
+                    // Refer the following URL for the data structures used here:
                     // http://msdn.microsoft.com/en-us/library/ms997538.aspx
 
                     // RT_GROUP_ICON resource consists of a GRPICONDIR and GRPICONDIRENTRY's.
 
-                    var dir = GetDataFromResource(hModule, RT_GROUP_ICON, name);
+                    byte[] dir = GetDataFromResource(hModule, RT_GROUP_ICON, name);
 
                     // Calculate the size of an entire .icon file.
 
@@ -169,7 +161,7 @@ namespace TsudaKageyu
                     for (int i = 0; i < count; ++i)
                         len += BitConverter.ToInt32(dir, 6 + 14 * i + 8);   // GRPICONDIRENTRY.dwBytesInRes
 
-                    using (var dst = new BinaryWriter(new MemoryStream(len)))
+                    using (BinaryWriter dst = new BinaryWriter(new MemoryStream(len)))
                     {
                         // Copy GRPICONDIR to ICONDIR.
 
@@ -182,7 +174,7 @@ namespace TsudaKageyu
                             // Load the picture.
 
                             ushort id = BitConverter.ToUInt16(dir, 6 + 14 * i + 12);    // GRPICONDIRENTRY.nID
-                            var pic = GetDataFromResource(hModule, RT_ICON, (IntPtr)id);
+                            byte[] pic = GetDataFromResource(hModule, RT_ICON, (IntPtr)id);
 
                             // Copy GRPICONDIRENTRY to ICONDIRENTRY.
 
@@ -204,7 +196,7 @@ namespace TsudaKageyu
                     }
 
                     return true;
-                };
+                }
                 NativeMethods.EnumResourceNames(hModule, RT_GROUP_ICON, callback, IntPtr.Zero);
 
                 iconData = tmpData.ToArray();
@@ -252,7 +244,7 @@ namespace TsudaKageyu
 
             string fileName;
             {
-                var buf = new StringBuilder(MAX_PATH);
+                StringBuilder buf = new StringBuilder(MAX_PATH);
                 int len = NativeMethods.GetMappedFileName(
                     NativeMethods.GetCurrentProcess(), hModule, buf, buf.Capacity);
                 if (len == 0)
@@ -266,13 +258,13 @@ namespace TsudaKageyu
 
             for (char c = 'A'; c <= 'Z'; ++c)
             {
-                var drive = c + ":";
-                var buf = new StringBuilder(MAX_PATH);
+                string drive = c + ":";
+                StringBuilder buf = new StringBuilder(MAX_PATH);
                 int len = NativeMethods.QueryDosDevice(drive, buf, buf.Capacity);
                 if (len == 0)
                     continue;
 
-                var devPath = buf.ToString();
+                string devPath = buf.ToString();
                 if (fileName.StartsWith(devPath))
                     return (drive + fileName.Substring(devPath.Length));
             }

@@ -27,6 +27,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Reflection;
@@ -44,11 +45,11 @@ namespace TsudaKageyu
         {
             // Create a dynamic method to access Icon.iconData private field.
 
-            var dm = new DynamicMethod(
+            DynamicMethod dm = new DynamicMethod(
                 "GetIconData", typeof(byte[]), new Type[] { typeof(Icon) }, typeof(Icon));
-            var fi = typeof(Icon).GetField(
+            FieldInfo fi = typeof(Icon).GetField(
                 "iconData", BindingFlags.Instance | BindingFlags.NonPublic);
-            var gen = dm.GetILGenerator();
+            ILGenerator gen = dm.GetILGenerator();
             gen.Emit(OpCodes.Ldarg_0);
             gen.Emit(OpCodes.Ldfld, fi);
             gen.Emit(OpCodes.Ret);
@@ -57,21 +58,21 @@ namespace TsudaKageyu
         }
 
         /// <summary>
-        /// Split an Icon consists of multiple icons into an array of Icon each
-        /// consists of single icons.
+        /// Splitting an <see cref="Icon"/> consists of multiple icons into an array of <see cref="Icon"/> each
+        /// consists of single icon.
         /// </summary>
-        /// <param name="icon">A System.Drawing.Icon to be split.</param>
-        /// <returns>An array of System.Drawing.Icon.</returns>
-        public static Icon[] Split(Icon icon)
+        /// <param name="icon">A <see cref="System.Drawing.Icon"/> to be split.</param>
+        /// <returns>An array of <see cref="System.Drawing.Icon"/>.</returns>
+        public static Icon[] Split(this Icon icon)
         {
             if (icon == null)
-                throw new ArgumentNullException("icon");
+                throw new ArgumentNullException(nameof(icon));
 
             // Get an .ico file in memory, then split it into separate icons.
 
-            var src = GetIconData(icon);
+            byte[] src = GetIconData(icon);
 
-            var splitIcons = new List<Icon>();
+            List<Icon> splitIcons = new List<Icon>();
             {
                 int count = BitConverter.ToUInt16(src, 4);
 
@@ -80,7 +81,7 @@ namespace TsudaKageyu
                     int length = BitConverter.ToInt32(src, 6 + 16 * i + 8);    // ICONDIRENTRY.dwBytesInRes
                     int offset = BitConverter.ToInt32(src, 6 + 16 * i + 12);   // ICONDIRENTRY.dwImageOffset
 
-                    using (var dst = new BinaryWriter(new MemoryStream(6 + 16 + length)))
+                    using (BinaryWriter dst = new BinaryWriter(new MemoryStream(6 + 16 + length)))
                     {
                         // Copy ICONDIR and set idCount to 1.
 
@@ -107,6 +108,60 @@ namespace TsudaKageyu
             return splitIcons.ToArray();
         }
 
+        public static Icon TryGetIcon(this Icon icon, Size size, int bits, bool tryResize, bool tryRedefineBitsCount) => icon.Split().TryGetIcon(size, bits, tryResize, tryRedefineBitsCount);
+
+        public static Icon TryGetIcon(this Icon[] icons, Size size, int bits, bool tryResize, bool tryRedefineBitsCount)
+
+        {
+
+            //Icon[] icons = icon.Split();
+
+            foreach (Icon i in icons)
+
+                if (i.Size == size && i.GetBitCount() == bits)
+                {
+                    Debug.WriteLine("bits: " + bits.ToString());
+                    return i;
+                }
+
+            if (tryResize || tryRedefineBitsCount)
+
+            {
+
+                Icon icon = null;
+
+                foreach (Icon i in icons)
+
+                {
+
+                    bool result = (i.Size == size || tryResize) && ((i.Size.Height > size.Height && (icon == null || i.Size.Height > icon.Size.Height)) || (i.Size.Height < size.Height && (icon == null || i.Size.Height > icon.Size.Height)));
+
+                    if (!result)
+
+                    {
+
+                        int i_bits = i.GetBitCount();
+
+                        int icon_bits = icon.GetBitCount();
+
+                        result = (i_bits == bits || tryRedefineBitsCount) && ((i_bits > bits && (icon == null || i_bits > icon_bits)) || (i_bits < bits && (icon == null || i_bits > icon_bits)));
+
+                    }
+
+                    if (result)
+
+                        icon = i;
+
+                }
+
+                return icon;
+
+            }
+
+            return null;
+
+        }
+
         /// <summary>
         /// Converts an Icon to a GDI+ Bitmap preserving the transparent area.
         /// </summary>
@@ -115,17 +170,16 @@ namespace TsudaKageyu
         public static Bitmap ToBitmap(Icon icon)
         {
             if (icon == null)
-                throw new ArgumentNullException("icon");
+                throw new ArgumentNullException(nameof(icon));
 
             // Quick workaround: Create an .ico file in memory, then load it as a Bitmap.
 
-            using (var ms = new MemoryStream())
+            using (MemoryStream ms = new MemoryStream())
             {
                 icon.Save(ms);
-                using (var bmp = (Bitmap)Image.FromStream(ms))
-                {
+                using (Bitmap bmp = (Bitmap)Image.FromStream(ms))
+
                     return new Bitmap(bmp);
-                }
             }
         }
 
@@ -139,14 +193,14 @@ namespace TsudaKageyu
         /// If the icon has multiple variations, this method returns the bit 
         /// depth of the first variation.
         /// </remarks>
-        public static int GetBitCount(Icon icon)
+        public static int GetBitCount(this Icon icon)
         {
             if (icon == null)
-                throw new ArgumentNullException("icon");
+                throw new ArgumentNullException(nameof(icon));
 
             // Get an .ico file in memory, then read the header.
 
-            var data = GetIconData(icon);
+            byte[] data = GetIconData(icon);
             if (data.Length >= 51
                 && data[22] == 0x89 && data[23] == 0x50 && data[24] == 0x4e && data[25] == 0x47
                 && data[26] == 0x0d && data[27] == 0x0a && data[28] == 0x1a && data[29] == 0x0a
@@ -173,30 +227,28 @@ namespace TsudaKageyu
                 }
             }
             else if (data.Length >= 22)
-            {
+
                 // The picture is not PNG. Read ICONDIRENTRY structure.
 
                 return BitConverter.ToUInt16(data, 12);
-            }
 
             throw new ArgumentException("The icon is corrupt. Couldn't read the header.", "icon");
         }
 
         private static byte[] GetIconData(Icon icon)
         {
-            var data = getIconData(icon);
+            byte[] data = getIconData(icon);
             if (data != null)
-            {
+
                 return data;
-            }
+
             else
-            {
-                using (var ms = new MemoryStream())
+
+                using (MemoryStream ms = new MemoryStream())
                 {
                     icon.Save(ms);
                     return ms.ToArray();
                 }
-            }
         }
     }
 }
