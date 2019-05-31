@@ -118,12 +118,12 @@ namespace TsudaKageyu
         public void Save(int index, Stream outputStream)
         {
             if (index < 0 || Count <= index)
-                throw new ArgumentOutOfRangeException("index");
+                throw new ArgumentOutOfRangeException(nameof(index));
 
             if (outputStream == null)
-                throw new ArgumentNullException("outputStream");
+                throw new ArgumentNullException(nameof(outputStream));
 
-            var data = iconData[index];
+            byte[] data = iconData[index];
             outputStream.Write(data, 0, data.Length);
         }
 
@@ -136,6 +136,7 @@ namespace TsudaKageyu
             try
             {
                 hModule = NativeMethods.LoadLibraryEx(fileName, IntPtr.Zero, LOAD_LIBRARY_AS_DATAFILE);
+
                 if (hModule == IntPtr.Zero)
                     throw new Win32Exception();
 

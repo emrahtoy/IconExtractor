@@ -27,7 +27,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Reflection;
@@ -119,10 +118,8 @@ namespace TsudaKageyu
             foreach (Icon i in icons)
 
                 if (i.Size == size && i.GetBitCount() == bits)
-                {
-                    Debug.WriteLine("bits: " + bits.ToString());
+
                     return i;
-                }
 
             if (tryResize || tryRedefineBitsCount)
 
