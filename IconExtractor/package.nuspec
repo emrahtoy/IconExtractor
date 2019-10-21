@@ -4,13 +4,13 @@
     <!--*-->
     <id>IconExtractor.dll</id>
     <!--*-->
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <title>IconExtractor.dll</title>
     <!--*-->
     <authors>Tsuda Kageyu, Pierre Sprimont</authors>
     <owners>Tsuda Kageyu, Pierre Sprimont</owners>
     <licenseUrl>https://github.com/pierresprim/IconExtractor/blob/master/LICENSE.txt</licenseUrl>
-    <projectUrl>https://github.com/pierresprim/IconExtractor</projectUrl>
+    <projectUrl>https://wincopies.com</projectUrl>
     <!--
     <iconUrl></iconUrl>
 -->
@@ -19,11 +19,15 @@
     <description>IconExtractor/IconUtil Library for .NET</description>
     <!--*-->
     <releaseNotes>System requirements:
-.NET Framework version: 4.8
+
+.NET Framework version: 4.0
 OS: Windows
+
 New in this version:
-Added some features and updated project to the new .NET and code specifications
-Project link: https://github.com/pierresprim/IconExtractor
+
+Supports .NET 4.0
+Project link: https://wincopies.com
+
 License link: https://github.com/pierresprim/IconExtractor/blob/master/LICENSE.txt</releaseNotes>
     <copyright>Copyright © 2014 Tsuda Kageyu. All rights reserved. Copyright © 2019 Pierre Sprimont</copyright>
     <tags>
