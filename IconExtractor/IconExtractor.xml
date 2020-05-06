@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>IconExtractor</name>
+    </assembly>
+    <members>
+        <member name="P:TsudaKageyu.IconExtractor.FileName">
+            <summary>
+            Gets the full path of the associated file.
+            </summary>
+        </member>
+        <member name="P:TsudaKageyu.IconExtractor.Count">
+            <summary>
+            Gets the count of the icons in the associated file.
+            </summary>
+        </member>
+        <member name="M:TsudaKageyu.IconExtractor.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the IconExtractor class from the specified file name.
+            </summary>
+            <param name="fileName">The file to extract icons from.</param>
+        </member>
+        <member name="M:TsudaKageyu.IconExtractor.GetIcon(System.Int32)">
+            <summary>
+            Extracts an icon from the file.
+            </summary>
+            <param name="index">Zero based index of the icon to be extracted.</param>
+            <returns>A System.Drawing.Icon object.</returns>
+            <remarks>Always returns new copy of the Icon. It should be disposed by the user.</remarks>
+        </member>
+        <member name="M:TsudaKageyu.IconExtractor.GetAllIcons">
+            <summary>
+            Extracts all the icons from the file.
+            </summary>
+            <returns>An array of System.Drawing.Icon objects.</returns>
+            <remarks>Always returns new copies of the Icons. They should be disposed by the user.</remarks>
+        </member>
+        <member name="M:TsudaKageyu.IconExtractor.Save(System.Int32,System.IO.Stream)">
+            <summary>
+            Save an icon to the specified output Stream.
+            </summary>
+            <param name="index">Zero based index of the icon to be saved.</param>
+            <param name="outputStream">The Stream to save to.</param>
+        </member>
+        <member name="M:TsudaKageyu.IconUtil.Split(System.Drawing.Icon)">
+            <summary>
+            Splitting an <see cref="T:System.Drawing.Icon"/> consists of multiple icons into an array of <see cref="T:System.Drawing.Icon"/> each
+            consists of single icon.
+            </summary>
+            <param name="icon">A <see cref="T:System.Drawing.Icon"/> to be split.</param>
+            <returns>An array of <see cref="T:System.Drawing.Icon"/>.</returns>
+        </member>
+        <member name="M:TsudaKageyu.IconUtil.ToBitmap(System.Drawing.Icon)">
+            <summary>
+            Converts an Icon to a GDI+ Bitmap preserving the transparent area.
+            </summary>
+            <param name="icon">An System.Drawing.Icon to be converted.</param>
+            <returns>A System.Drawing.Bitmap Object.</returns>
+        </member>
+        <member name="M:TsudaKageyu.IconUtil.GetBitCount(System.Drawing.Icon)">
+            <summary>
+            Gets the bit depth of an Icon.
+            </summary>
+            <param name="icon">An System.Drawing.Icon object.</param>
+            <returns>Bit depth of the icon.</returns>
+            <remarks>
+            This method takes into account the PNG header.
+            If the icon has multiple variations, this method returns the bit 
+            depth of the first variation.
+            </remarks>
+        </member>
+    </members>
+</doc>

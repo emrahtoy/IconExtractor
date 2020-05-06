@@ -36,25 +36,42 @@ namespace TsudaKageyu
 {
     public static class IconUtil
     {
-        private delegate byte[] GetIconDataDelegate(Icon icon);
+        //private delegate byte[] GetIconDataDelegate(Icon icon);
 
-        static GetIconDataDelegate getIconData;
-
-        static IconUtil()
+        public static byte[] ToBytes(this Icon icon)
         {
-            // Create a dynamic method to access Icon.iconData private field.
+            using (var ms = new MemoryStream())
+            {
+                icon.Save(ms);
 
-            DynamicMethod dm = new DynamicMethod(
-                "GetIconData", typeof(byte[]), new Type[] { typeof(Icon) }, typeof(Icon));
-            FieldInfo fi = typeof(Icon).GetField(
-                "iconData", BindingFlags.Instance | BindingFlags.NonPublic);
-            ILGenerator gen = dm.GetILGenerator();
-            gen.Emit(OpCodes.Ldarg_0);
-            gen.Emit(OpCodes.Ldfld, fi);
-            gen.Emit(OpCodes.Ret);
-
-            getIconData = (GetIconDataDelegate)dm.CreateDelegate(typeof(GetIconDataDelegate));
+                return ms.ToArray();
+            }
         }
+
+        public static Icon ToIcon(byte[] bytes)
+        {
+            using (var ms = new MemoryStream(bytes))
+
+                return new Icon(ms);
+        }
+
+        //private static readonly GetIconDataDelegate getIconData;
+
+        //static IconUtil()
+        //{
+        //    // Create a dynamic method to access Icon.iconData private field.
+
+        //    var dm = new DynamicMethod(
+        //        "GetIconData", typeof(byte[]), new Type[] { typeof(Icon) }, typeof(Icon));
+        //    FieldInfo fi = typeof(Icon).GetField(
+        //        "iconData", BindingFlags.Instance | BindingFlags.NonPublic);
+        //    ILGenerator gen = dm.GetILGenerator();
+        //    gen.Emit(OpCodes.Ldarg_0);
+        //    gen.Emit(OpCodes.Ldfld, fi);
+        //    gen.Emit(OpCodes.Ret);
+
+        //    getIconData = (GetIconDataDelegate)dm.CreateDelegate(typeof(GetIconDataDelegate));
+        //}
 
         /// <summary>
         /// Splitting an <see cref="Icon"/> consists of multiple icons into an array of <see cref="Icon"/> each
@@ -65,22 +82,23 @@ namespace TsudaKageyu
         public static Icon[] Split(this Icon icon)
         {
             if (icon == null)
+
                 throw new ArgumentNullException(nameof(icon));
 
             // Get an .ico file in memory, then split it into separate icons.
 
             byte[] src = GetIconData(icon);
 
-            List<Icon> splitIcons = new List<Icon>();
+            var splitIcons = new List<Icon>();
             {
                 int count = BitConverter.ToUInt16(src, 4);
 
                 for (int i = 0; i < count; i++)
                 {
-                    int length = BitConverter.ToInt32(src, 6 + 16 * i + 8);    // ICONDIRENTRY.dwBytesInRes
-                    int offset = BitConverter.ToInt32(src, 6 + 16 * i + 12);   // ICONDIRENTRY.dwImageOffset
+                    int length = BitConverter.ToInt32(src, 6 + (16 * i) + 8);    // ICONDIRENTRY.dwBytesInRes
+                    int offset = BitConverter.ToInt32(src, 6 + (16 * i) + 12);   // ICONDIRENTRY.dwImageOffset
 
-                    using (BinaryWriter dst = new BinaryWriter(new MemoryStream(6 + 16 + length)))
+                    using (var dst = new BinaryWriter(new MemoryStream(6 + 16 + length)))
                     {
                         // Copy ICONDIR and set idCount to 1.
 
@@ -89,7 +107,7 @@ namespace TsudaKageyu
 
                         // Copy ICONDIRENTRY and set dwImageOffset to 22.
 
-                        dst.Write(src, 6 + 16 * i, 12); // ICONDIRENTRY except dwImageOffset
+                        dst.Write(src, 6 + (16 * i), 12); // ICONDIRENTRY except dwImageOffset
                         dst.Write(22);                   // ICONDIRENTRY.dwImageOffset
 
                         // Copy a picture.
@@ -98,7 +116,7 @@ namespace TsudaKageyu
 
                         // Create an icon from the in-memory file.
 
-                        dst.BaseStream.Seek(0, SeekOrigin.Begin);
+                        _ = dst.BaseStream.Seek(0, SeekOrigin.Begin);
                         splitIcons.Add(new Icon(dst.BaseStream));
                     }
                 }
@@ -167,14 +185,16 @@ namespace TsudaKageyu
         public static Bitmap ToBitmap(Icon icon)
         {
             if (icon == null)
+
                 throw new ArgumentNullException(nameof(icon));
 
             // Quick workaround: Create an .ico file in memory, then load it as a Bitmap.
 
-            using (MemoryStream ms = new MemoryStream())
+            using (var ms = new MemoryStream())
             {
                 icon.Save(ms);
-                using (Bitmap bmp = (Bitmap)Image.FromStream(ms))
+
+                using (var bmp = (Bitmap)Image.FromStream(ms))
 
                     return new Bitmap(bmp);
             }
@@ -193,11 +213,13 @@ namespace TsudaKageyu
         public static int GetBitCount(this Icon icon)
         {
             if (icon == null)
+
                 throw new ArgumentNullException(nameof(icon));
 
             // Get an .ico file in memory, then read the header.
 
             byte[] data = GetIconData(icon);
+
             if (data.Length >= 51
                 && data[22] == 0x89 && data[23] == 0x50 && data[24] == 0x4e && data[25] == 0x47
                 && data[26] == 0x0d && data[27] == 0x0a && data[28] == 0x1a && data[29] == 0x0a
@@ -223,25 +245,27 @@ namespace TsudaKageyu
                         break;
                 }
             }
+
             else if (data.Length >= 22)
 
                 // The picture is not PNG. Read ICONDIRENTRY structure.
 
                 return BitConverter.ToUInt16(data, 12);
 
-            throw new ArgumentException("The icon is corrupt. Couldn't read the header.", "icon");
+            throw new ArgumentException("The icon is corrupt. Couldn't read the header.", nameof(icon));
         }
 
         private static byte[] GetIconData(Icon icon)
         {
-            byte[] data = getIconData(icon);
+            byte[] data = icon.ToBytes();
+
             if (data != null)
 
                 return data;
 
             else
 
-                using (MemoryStream ms = new MemoryStream())
+                using (var ms = new MemoryStream())
                 {
                     icon.Save(ms);
                     return ms.ToArray();

@@ -12,34 +12,28 @@ namespace SampleApp
         IconExtractor m_iconExtractor = null;
         int m_iconIndex = 0;
 
-        public Form1()
-        {
-            InitializeComponent();
-        }
+        public Form1() => InitializeComponent();
 
         private void ClearAllIcons()
         {
-            foreach (var item in lvwIcons.Items)
+            foreach (object item in lvwIcons.Items)
+
                 ((IconListViewItem)item).Bitmap.Dispose();
 
             lvwIcons.Items.Clear();
         }
 
-        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            ClearAllIcons();
-        }
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e) => ClearAllIcons();
 
         private void btnPickFile_Click(object sender, EventArgs e)
         {
-            var result = iconPickerDialog.ShowDialog(this);
-            if (result == DialogResult.OK)
+            if (iconPickerDialog.ShowDialog(this) == DialogResult.OK)
             {
-                var fileName = iconPickerDialog.FileName;
+                string fileName = iconPickerDialog.FileName;
                 m_iconIndex = iconPickerDialog.IconIndex;
 
-                Icon icon = null;
-                Icon[] splitIcons = null;
+                Icon icon ;
+                Icon[] splitIcons ;
                 try
                 {
                     if (Path.GetExtension(iconPickerDialog.FileName).ToLower() == ".ico")
@@ -75,13 +69,13 @@ namespace SampleApp
                 foreach (var i in splitIcons)
                 {
                     var item = new IconListViewItem();
-                    var size = i.Size;
+                    Size size = i.Size;
                     item.BitCount = IconUtil.GetBitCount(i);
                     item.Bitmap = IconUtil.ToBitmap(i);
                     item.ToolTipText = String.Format("{0}x{1}, {2} bits", size.Width, size.Height, item.BitCount);
                     i.Dispose();
 
-                    lvwIcons.Items.Add(item);
+                    _ = lvwIcons.Items.Add(item);
                 }
 
                 lvwIcons.EndUpdate();
@@ -90,36 +84,28 @@ namespace SampleApp
             }
         }
 
-        private void cbShowChecker_CheckedChanged(object sender, EventArgs e)
-        {
-            if (cbShowChecker.Checked)
-                lvwIcons.BackgroundImage = Properties.Resources.Checker;
-            else
-                lvwIcons.BackgroundImage = null;
-        }
+        private void cbShowChecker_CheckedChanged(object sender, EventArgs e) => lvwIcons.BackgroundImage = cbShowChecker.Checked ? Properties.Resources.Checker : null;
 
         private void btnSaveAsIco_Click(object sender, EventArgs e)
         {
-            var result = saveIcoDialog.ShowDialog(this);
-            if (result == DialogResult.OK)
-            {
-                using (var fs = File.OpenWrite(saveIcoDialog.FileName))
-                {
+            if (saveIcoDialog.ShowDialog(this) == DialogResult.OK)
+
+                using (FileStream fs = File.OpenWrite(saveIcoDialog.FileName))
+
                     m_iconExtractor.Save(m_iconIndex, fs);
-                }
-            }
         }
 
         private void btnSaveAsPng_Click(object sender, EventArgs e)
         {
-            var result = folderBrowserDialog.ShowDialog(this);
-            if (result == DialogResult.OK)
+            if (folderBrowserDialog.ShowDialog(this) == DialogResult.OK)
             {
                 int count = lvwIcons.Items.Count;
+
                 for (int i = 0; i < count; ++i)
                 {
                     var item = (IconListViewItem)lvwIcons.Items[i];
-                    var fileName = String.Format(
+
+                    string fileName = String.Format(
                         "{0}x{1}, {2} bits.png", item.Bitmap.Width, item.Bitmap.Height, item.BitCount);
 
                     fileName = Path.Combine(folderBrowserDialog.SelectedPath, fileName);

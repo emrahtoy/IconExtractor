@@ -25,6 +25,8 @@
  *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using Microsoft.WindowsAPICodePack.Win32Native;
+using static Microsoft.WindowsAPICodePack.Win32Native.Consts.Shell;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -47,8 +49,6 @@ namespace TsudaKageyu
 
         private static readonly IntPtr RT_ICON = (IntPtr)3;
         private static readonly IntPtr RT_GROUP_ICON = (IntPtr)14;
-
-        private const int MAX_PATH = 260;
 
         #endregion
 
@@ -87,11 +87,12 @@ namespace TsudaKageyu
         public Icon GetIcon(int index)
         {
             if (index < 0 || Count <= index)
+
                 throw new ArgumentOutOfRangeException(nameof(index));
 
             // Create an Icon based on a .ico file in memory.
 
-            using (MemoryStream ms = new MemoryStream(iconData[index]))
+            using (var ms = new MemoryStream(iconData[index]))
 
                 return new Icon(ms);
         }
@@ -103,8 +104,10 @@ namespace TsudaKageyu
         /// <remarks>Always returns new copies of the Icons. They should be disposed by the user.</remarks>
         public Icon[] GetAllIcons()
         {
-            List<Icon> icons = new List<Icon>();
+            var icons = new List<Icon>();
+
             for (int i = 0; i < Count; ++i)
+
                 icons.Add(GetIcon(i));
 
             return icons.ToArray();
@@ -118,9 +121,11 @@ namespace TsudaKageyu
         public void Save(int index, Stream outputStream)
         {
             if (index < 0 || Count <= index)
+
                 throw new ArgumentOutOfRangeException(nameof(index));
 
             if (outputStream == null)
+
                 throw new ArgumentNullException(nameof(outputStream));
 
             byte[] data = iconData[index];
@@ -130,21 +135,24 @@ namespace TsudaKageyu
         private void Initialize(string fileName)
         {
             if (fileName == null)
+
                 throw new ArgumentNullException(nameof(fileName));
 
             IntPtr hModule = IntPtr.Zero;
+
             try
             {
-                hModule = NativeMethods.LoadLibraryEx(fileName, IntPtr.Zero, LOAD_LIBRARY_AS_DATAFILE);
+                hModule = Core.LoadLibraryEx(fileName, IntPtr.Zero, LOAD_LIBRARY_AS_DATAFILE);
 
                 if (hModule == IntPtr.Zero)
+
                     throw new Win32Exception();
 
                 FileName = GetFileName(hModule);
 
                 // Enumerate the icon resource and build .ico files in memory.
 
-                List<byte[]> tmpData = new List<byte[]>();
+                var tmpData = new List<byte[]>();
 
                 bool callback(IntPtr h, IntPtr t, IntPtr name, IntPtr l)
                 {
@@ -158,36 +166,38 @@ namespace TsudaKageyu
                     // Calculate the size of an entire .icon file.
 
                     int count = BitConverter.ToUInt16(dir, 4);  // GRPICONDIR.idCount
-                    int len = 6 + 16 * count;                   // sizeof(ICONDIR) + sizeof(ICONDIRENTRY) * count
+                    int len = 6 + (16 * count);                   // sizeof(ICONDIR) + sizeof(ICONDIRENTRY) * count
+
                     for (int i = 0; i < count; ++i)
+
                         len += BitConverter.ToInt32(dir, 6 + 14 * i + 8);   // GRPICONDIRENTRY.dwBytesInRes
 
-                    using (BinaryWriter dst = new BinaryWriter(new MemoryStream(len)))
+                    using (var dst = new BinaryWriter(new MemoryStream(len)))
                     {
                         // Copy GRPICONDIR to ICONDIR.
 
                         dst.Write(dir, 0, 6);
 
-                        int picOffset = 6 + 16 * count; // sizeof(ICONDIR) + sizeof(ICONDIRENTRY) * count
+                        int picOffset = 6 + (16 * count); // sizeof(ICONDIR) + sizeof(ICONDIRENTRY) * count
 
                         for (int i = 0; i < count; ++i)
                         {
                             // Load the picture.
 
-                            ushort id = BitConverter.ToUInt16(dir, 6 + 14 * i + 12);    // GRPICONDIRENTRY.nID
+                            ushort id = BitConverter.ToUInt16(dir, 6 + (14 * i) + 12);    // GRPICONDIRENTRY.nID
                             byte[] pic = GetDataFromResource(hModule, RT_ICON, (IntPtr)id);
 
                             // Copy GRPICONDIRENTRY to ICONDIRENTRY.
 
-                            dst.Seek(6 + 16 * i, SeekOrigin.Begin);
+                            _ = dst.Seek(6 + (16 * i), SeekOrigin.Begin);
 
-                            dst.Write(dir, 6 + 14 * i, 8);  // First 8bytes are identical.
+                            dst.Write(dir, 6 + (14 * i), 8);  // First 8bytes are identical.
                             dst.Write(pic.Length);          // ICONDIRENTRY.dwBytesInRes
                             dst.Write(picOffset);           // ICONDIRENTRY.dwImageOffset
 
                             // Copy a picture.
 
-                            dst.Seek(picOffset, SeekOrigin.Begin);
+                            _ = dst.Seek(picOffset, SeekOrigin.Begin);
                             dst.Write(pic, 0, pic.Length);
 
                             picOffset += pic.Length;
@@ -198,14 +208,16 @@ namespace TsudaKageyu
 
                     return true;
                 }
-                NativeMethods.EnumResourceNames(hModule, RT_GROUP_ICON, callback, IntPtr.Zero);
+
+                _ = Core.EnumResourceNames(hModule, RT_GROUP_ICON, callback, IntPtr.Zero);
 
                 iconData = tmpData.ToArray();
             }
             finally
             {
                 if (hModule != IntPtr.Zero)
-                    NativeMethods.FreeLibrary(hModule);
+
+                    _ = Core.FreeLibrary(hModule);
             }
         }
 
@@ -213,20 +225,28 @@ namespace TsudaKageyu
         {
             // Load the binary data from the specified resource.
 
-            IntPtr hResInfo = NativeMethods.FindResource(hModule, name, type);
+            IntPtr hResInfo = Core.FindResource(hModule, name, type);
+
             if (hResInfo == IntPtr.Zero)
+
                 throw new Win32Exception();
 
-            IntPtr hResData = NativeMethods.LoadResource(hModule, hResInfo);
+            IntPtr hResData = Core.LoadResource(hModule, hResInfo);
+
             if (hResData == IntPtr.Zero)
+
                 throw new Win32Exception();
 
-            IntPtr pResData = NativeMethods.LockResource(hResData);
+            IntPtr pResData = Core.LockResource(hResData);
+
             if (pResData == IntPtr.Zero)
+
                 throw new Win32Exception();
 
-            uint size = NativeMethods.SizeofResource(hModule, hResInfo);
+            uint size = Core.SizeofResource(hModule, hResInfo);
+
             if (size == 0)
+
                 throw new Win32Exception();
 
             byte[] buf = new byte[size];
@@ -245,10 +265,12 @@ namespace TsudaKageyu
 
             string fileName;
             {
-                StringBuilder buf = new StringBuilder(MAX_PATH);
-                int len = NativeMethods.GetMappedFileName(
-                    NativeMethods.GetCurrentProcess(), hModule, buf, buf.Capacity);
+                var buf = new StringBuilder(MaxPath);
+                uint len = Core.GetMappedFileName(
+                    Core.GetCurrentProcess(), hModule, buf, (uint)buf.Capacity);
+
                 if (len == 0)
+
                     throw new Win32Exception();
 
                 fileName = buf.ToString();
@@ -260,13 +282,17 @@ namespace TsudaKageyu
             for (char c = 'A'; c <= 'Z'; ++c)
             {
                 string drive = c + ":";
-                StringBuilder buf = new StringBuilder(MAX_PATH);
-                int len = NativeMethods.QueryDosDevice(drive, buf, buf.Capacity);
+                var buf = new StringBuilder(MaxPath);
+                uint len = Core.QueryDosDevice(drive, buf, (uint)buf.Capacity);
+
                 if (len == 0)
+
                     continue;
 
                 string devPath = buf.ToString();
-                if (fileName.StartsWith(devPath))
+
+                if (fileName.StartsWith(devPath, StringComparison.OrdinalIgnoreCase))
+
                     return (drive + fileName.Substring(devPath.Length));
             }
 
