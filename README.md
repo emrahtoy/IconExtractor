@@ -4,6 +4,7 @@ Icon Extractor Library for .NET
 
 http://www.codeproject.com/Articles/26824/Extract-icons-from-EXE-or-DLL-files
 
+For release notes, see [https://wincopies.com/fwd.php?id=13](https://wincopies.com/fwd.php?id=13)
 
 Extract all the variations of an icon from .DLL/.EXE, including the ones ```ExtractIconEx()``` can't extract.
 

@@ -18,13 +18,13 @@
     <RepositoryUrl>https://github.com/pierresprim/IconExtractor.git</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
     <PackageTags>Icons</PackageTags>
-    <PackageReleaseNotes></PackageReleaseNotes>
+    <PackageReleaseNotes>See https://wincopies.com/fwd.php?id=13</PackageReleaseNotes>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>IconExtractor.snk</AssemblyOriginatorKeyFile>
+    <DocumentationFile>IconExtractor.xml</DocumentationFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net472|AnyCPU'">
-    <DocumentationFile>IconExtractor.xml</DocumentationFile>
     <DefineConstants>DEBUG</DefineConstants>
   </PropertyGroup>
 
