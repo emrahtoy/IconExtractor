@@ -28,6 +28,14 @@
             <returns>A System.Drawing.Icon object.</returns>
             <remarks>Always returns new copy of the Icon. It should be disposed by the user.</remarks>
         </member>
+        <member name="M:TsudaKageyu.IconExtractor.GetByResourceId(System.Int32)">
+            <summary>
+            Extracts an icon from the file by resource id.
+            </summary>
+            <param name="resourceId">Zero based resource id of the icon to be extracted.</param>
+            <returns>A System.Drawing.Icon object.</returns>
+            <remarks>Always returns new copy of the Icon. It should be disposed by the user.</remarks>
+        </member>
         <member name="M:TsudaKageyu.IconExtractor.GetAllIcons">
             <summary>
             Extracts all the icons from the file.

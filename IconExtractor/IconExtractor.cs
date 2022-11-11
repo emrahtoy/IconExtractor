@@ -55,6 +55,7 @@ namespace TsudaKageyu
         #region Fields
 
         private byte[][] iconData = null;   // Binary data of each icon.
+        private Dictionary<int,int> resourceIds = null;
 
         #endregion
 
@@ -95,6 +96,17 @@ namespace TsudaKageyu
             using (var ms = new MemoryStream(iconData[index]))
 
                 return new Icon(ms);
+        }
+
+        /// <summary>
+        /// Extracts an icon from the file by resource id.
+        /// </summary>
+        /// <param name="resourceId">Zero based resource id of the icon to be extracted.</param>
+        /// <returns>A System.Drawing.Icon object.</returns>
+        /// <remarks>Always returns new copy of the Icon. It should be disposed by the user.</remarks>
+        public Icon GetByResourceId(int resourceId)
+        {
+            return GetIcon(resourceIds[Math.Abs(resourceId)]);
         }
 
         /// <summary>
@@ -153,6 +165,7 @@ namespace TsudaKageyu
                 // Enumerate the icon resource and build .ico files in memory.
 
                 var tmpData = new List<byte[]>();
+                var tmpResourceIds = new Dictionary<int,int>();
 
                 bool callback(IntPtr h, IntPtr t, IntPtr name, IntPtr l)
                 {
@@ -204,6 +217,8 @@ namespace TsudaKageyu
                         }
 
                         tmpData.Add(((MemoryStream)dst.BaseStream).ToArray());
+                        tmpResourceIds.Add( Math.Abs(name.ToInt32()),tmpData.Count-1);
+
                     }
 
                     return true;
@@ -212,6 +227,7 @@ namespace TsudaKageyu
                 _ = Core.EnumResourceNames(hModule, RT_GROUP_ICON, callback, IntPtr.Zero);
 
                 iconData = tmpData.ToArray();
+                resourceIds = tmpResourceIds;
             }
             finally
             {
